@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "MarmaraVisitor",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "default",
@@ -28,10 +28,14 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      "./plugins/withNetworkSecurity"
+    ],
     "extra": {
       "eas": {
         "projectId": "df7b122c-d2cf-4b28-8cf0-ffe7b459fe35"
       }
-    }
+    },
+    "owner": "tifer"
   }
 }

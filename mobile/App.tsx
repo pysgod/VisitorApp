@@ -27,8 +27,8 @@ export default function App() {
 
   const setupKioskMode = async () => {
     try {
-      // Ekran yönünü kilitleme - Tablet Kiosk Modu için
-      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+      // Hem yatay hem dikey modu destekle - oryantasyon kilidi kaldırıldı
+      await ScreenOrientation.unlockAsync();
 
       if (Platform.OS === 'android') {
         // Navigasyon barını (alt butonları) gizle

@@ -622,9 +622,16 @@ export default function HomeScreen({ onLogout }: HomeScreenProps) {
         <View style={isLandscape ? styles.mainPanelLandscape : styles.mainPanelPortrait}>
           {/* Header */}
           <View style={styles.header}>
-            <View>
-              <Text style={styles.headerTitle}>Kayıt Paneli</Text>
-              <Text style={styles.headerSubtitle}>Personel: {staffName}</Text>
+            <View style={styles.headerLeft}>
+              {/* <Image 
+                source={require('../../assets/logo.png')} 
+                style={styles.headerLogo}
+                resizeMode="contain"
+              />*/}
+              <View>
+                <Text style={styles.headerTitle}>Kayıt Paneli</Text>
+                <Text style={styles.headerSubtitle}>Personel: {staffName}</Text>
+              </View>
             </View>
             <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
               <Text style={styles.logoutText}>ÇIKIŞ</Text>
@@ -734,6 +741,8 @@ const styles = StyleSheet.create({
   sidePanelPortrait: { height: 280, backgroundColor: '#f2f2f7', borderTopWidth: 1, borderTopColor: '#e5e5ea' },
   
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#e5e5ea' },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  headerLogo: { width: 200, height: 80, marginRight: 16 , transform: [{ scale: 1 }] },
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#1c1c1e' },
   headerSubtitle: { fontSize: 14, color: '#8e8e93', marginTop: 2 },
   logoutButton: { paddingVertical: 8, paddingHorizontal: 16, backgroundColor: '#ffebee', borderRadius: 8 },

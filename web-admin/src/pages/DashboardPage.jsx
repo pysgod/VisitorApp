@@ -105,7 +105,7 @@ export default function DashboardPage() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">Dashboard</h1>
+        <h1 className="page-title">GrafiK Panel</h1>
         <span className="page-date">
           {new Date().toLocaleDateString('tr-TR', { 
             weekday: 'long', 

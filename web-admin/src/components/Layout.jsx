@@ -22,7 +22,8 @@ export default function Layout() {
     <div className="app-container">
       <aside className="sidebar">
         <div className="sidebar-header">
-          <h1 className="sidebar-title">🏢 Ziyaretçi Sistemi</h1>
+          <img src="/logo.png" alt="Marmara Logo" className="sidebar-logo" />
+          <h1 className="sidebar-title">Ziyaretçi Sistemi</h1>
           <p className="sidebar-subtitle">Yönetici Paneli</p>
         </div>
 

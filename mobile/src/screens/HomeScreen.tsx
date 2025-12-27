@@ -40,6 +40,7 @@ interface HomeScreenProps {
 }
 
 type TabType = 'visitor' | 'vehicle';
+type RecordFilterType = 'all' | 'visitor' | 'vehicle';
 
 export default function HomeScreen({ onLogout }: HomeScreenProps) {
   const { width, height } = useWindowDimensions();
@@ -53,6 +54,10 @@ export default function HomeScreen({ onLogout }: HomeScreenProps) {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [activeRecords, setActiveRecords] = useState<ActiveRecord[]>([]);
   const [staffName, setStaffName] = useState('');
+  
+  // Filter and search for active records
+  const [recordFilter, setRecordFilter] = useState<RecordFilterType>('all');
+  const [recordSearch, setRecordSearch] = useState('');
 
   // Visitor Form
   const [visitorForm, setVisitorForm] = useState({
@@ -356,6 +361,28 @@ export default function HomeScreen({ onLogout }: HomeScreenProps) {
     ]);
   };
 
+  // Filtered records based on type and search
+  const filteredRecords = activeRecords.filter(record => {
+    // Type filter
+    if (recordFilter === 'visitor' && record.recordType !== 'visitor') return false;
+    if (recordFilter === 'vehicle' && record.recordType !== 'vehicle') return false;
+    
+    // Search filter
+    if (recordSearch) {
+      const search = recordSearch.toLowerCase();
+      const name = record.recordType === 'vehicle' ? record.driverName : record.fullName;
+      return (
+        name?.toLowerCase().includes(search) ||
+        record.licensePlate?.toLowerCase().includes(search)
+      );
+    }
+    return true;
+  });
+
+  // Counts for badges
+  const visitorCount = activeRecords.filter(r => r.recordType === 'visitor').length;
+  const vehicleCount = activeRecords.filter(r => r.recordType === 'vehicle').length;
+
   const renderRecordCard = ({ item }: { item: ActiveRecord }) => {
     const isVehicle = item.recordType === 'vehicle';
     const name = isVehicle ? item.driverName || item.fullName : item.fullName;
@@ -629,18 +656,64 @@ export default function HomeScreen({ onLogout }: HomeScreenProps) {
           <View style={styles.listHeader}>
             <Text style={styles.listHeaderTitle}>Aktif Kayıtlar</Text>
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{activeRecords.length}</Text>
+              <Text style={styles.badgeText}>{filteredRecords.length}</Text>
             </View>
           </View>
 
+          {/* Filter Tabs */}
+          <View style={styles.filterTabsContainer}>
+            <TouchableOpacity
+              style={[styles.filterTab, recordFilter === 'all' && styles.filterTabActive]}
+              onPress={() => setRecordFilter('all')}
+            >
+              <Text style={[styles.filterTabText, recordFilter === 'all' && styles.filterTabTextActive]}>
+                Tümü ({activeRecords.length})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterTab, recordFilter === 'visitor' && styles.filterTabActive]}
+              onPress={() => setRecordFilter('visitor')}
+            >
+              <Text style={[styles.filterTabText, recordFilter === 'visitor' && styles.filterTabTextActive]}>
+                👤 ({visitorCount})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterTab, recordFilter === 'vehicle' && styles.filterTabActive]}
+              onPress={() => setRecordFilter('vehicle')}
+            >
+              <Text style={[styles.filterTabText, recordFilter === 'vehicle' && styles.filterTabTextActive]}>
+                🚗 ({vehicleCount})
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Search Input */}
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="İsim veya plaka ara..."
+              value={recordSearch}
+              onChangeText={setRecordSearch}
+              placeholderTextColor="#8e8e93"
+            />
+            {recordSearch.length > 0 && (
+              <TouchableOpacity style={styles.clearSearch} onPress={() => setRecordSearch('')}>
+                <Text style={styles.clearSearchText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
           <FlatList
-            data={activeRecords}
+            data={filteredRecords}
             keyExtractor={(item) => item._id}
             renderItem={renderRecordCard}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>Aktif kayıt yok</Text>
+                <Text style={styles.emptyStateText}>
+                  {recordSearch ? 'Sonuç bulunamadı' : 'Aktif kayıt yok'}
+                </Text>
               </View>
             }
             contentContainerStyle={styles.listContent}
@@ -735,4 +808,17 @@ const styles = StyleSheet.create({
   plateInput: { flex: 1, paddingRight: 40 },
   ocrIndicator: { position: 'absolute', right: 12, top: 18 },
   photoLoading: { position: 'absolute', bottom: 8 },
+  
+  // Filter tabs for active records
+  filterTabsContainer: { flexDirection: 'row', backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#e5e5ea' },
+  filterTab: { flex: 1, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginHorizontal: 4, backgroundColor: '#f2f2f7' },
+  filterTabActive: { backgroundColor: '#007aff' },
+  filterTabText: { fontSize: 12, fontWeight: '600', color: '#8e8e93' },
+  filterTabTextActive: { color: '#fff' },
+  
+  // Search for active records
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 8 },
+  searchInput: { flex: 1, backgroundColor: '#f2f2f7', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, fontSize: 14, color: '#1c1c1e' },
+  clearSearch: { marginLeft: 8, width: 28, height: 28, borderRadius: 14, backgroundColor: '#e5e5ea', alignItems: 'center', justifyContent: 'center' },
+  clearSearchText: { color: '#8e8e93', fontSize: 14, fontWeight: '600' },
 });

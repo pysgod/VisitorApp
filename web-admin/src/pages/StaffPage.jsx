@@ -7,6 +7,8 @@ export default function StaffPage() {
   const [showModal, setShowModal] = useState(false);
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
     loadStaff();
@@ -69,6 +71,22 @@ export default function StaffPage() {
     }
   };
 
+  // Filter staff
+  const filteredStaff = staff.filter(s => {
+    const matchesSearch = !searchText || s.name?.toLowerCase().includes(searchText.toLowerCase());
+    const matchesStatus = !statusFilter || 
+      (statusFilter === 'active' && s.isActive) || 
+      (statusFilter === 'inactive' && !s.isActive);
+    return matchesSearch && matchesStatus;
+  });
+
+  const hasActiveFilters = searchText || statusFilter;
+
+  const clearFilters = () => {
+    setSearchText('');
+    setStatusFilter('');
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -88,6 +106,44 @@ export default function StaffPage() {
       </div>
 
       <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">Filtreler</h3>
+          {hasActiveFilters && (
+            <button className="btn btn-secondary btn-sm" onClick={clearFilters}>
+              ✕ Temizle
+            </button>
+          )}
+        </div>
+        <div className="filters">
+          <div className="filter-group search-group">
+            <label>Ara</label>
+            <input
+              type="text"
+              className="form-input search-input"
+              placeholder="Personel adı..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+          </div>
+          <div className="filter-group">
+            <label>Durum</label>
+            <select
+              className="form-select"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">Tümü</option>
+              <option value="active">Aktif</option>
+              <option value="inactive">Pasif</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">Personel Listesi ({filteredStaff.length})</h3>
+        </div>
         <div className="table-container">
           <table>
             <thead>
@@ -101,7 +157,7 @@ export default function StaffPage() {
               </tr>
             </thead>
             <tbody>
-              {staff.map((s) => (
+              {filteredStaff.map((s) => (
                 <tr key={s._id}>
                   <td><strong>{s.name}</strong></td>
                   <td>
@@ -141,9 +197,9 @@ export default function StaffPage() {
                   </td>
                 </tr>
               ))}
-              {staff.length === 0 && (
+              {filteredStaff.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center">Henüz personel yok</td>
+                  <td colSpan={6} className="text-center">Kayıt bulunamadı</td>
                 </tr>
               )}
             </tbody>

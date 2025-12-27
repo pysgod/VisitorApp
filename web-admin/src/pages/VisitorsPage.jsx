@@ -7,6 +7,8 @@ export default function VisitorsPage() {
   const [staffList, setStaffList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
+  const [searchText, setSearchText] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: 'entryTime', direction: 'desc' });
   const [filters, setFilters] = useState({
     status: '',
     department: '',
@@ -97,6 +99,85 @@ export default function VisitorsPage() {
     setSelectedVisitor(null);
   };
 
+  // Quick date filter helpers
+  const setQuickDateFilter = (preset) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let startDate = '';
+    let endDate = new Date().toISOString().split('T')[0];
+
+    if (preset === 'today') {
+      startDate = endDate;
+    } else if (preset === 'week') {
+      const weekAgo = new Date(today);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      startDate = weekAgo.toISOString().split('T')[0];
+    } else if (preset === 'month') {
+      const monthAgo = new Date(today);
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      startDate = monthAgo.toISOString().split('T')[0];
+    }
+
+    setFilters({ ...filters, startDate, endDate });
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      status: '',
+      department: '',
+      recordedBy: '',
+      startDate: '',
+      endDate: '',
+    });
+    setSearchText('');
+    setPagination({ ...pagination, page: 1 });
+  };
+
+  const hasActiveFilters = filters.status || filters.department || filters.recordedBy || filters.startDate || filters.endDate || searchText;
+
+  // Sorting
+  const handleSort = (key) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) return '↕️';
+    return sortConfig.direction === 'asc' ? '↑' : '↓';
+  };
+
+  // Filter and sort visitors
+  const filteredVisitors = visitors
+    .filter(v => {
+      if (!searchText) return true;
+      const search = searchText.toLowerCase();
+      return (
+        v.fullName?.toLowerCase().includes(search) ||
+        v.phone?.includes(search) ||
+        v.company?.toLowerCase().includes(search) ||
+        v.visitingPerson?.toLowerCase().includes(search) ||
+        v.licensePlate?.toLowerCase().includes(search)
+      );
+    })
+    .sort((a, b) => {
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+      if (!aVal && !bVal) return 0;
+      if (!aVal) return 1;
+      if (!bVal) return -1;
+      
+      if (sortConfig.key === 'entryTime' || sortConfig.key === 'exitTime') {
+        return sortConfig.direction === 'asc' 
+          ? new Date(aVal) - new Date(bVal)
+          : new Date(bVal) - new Date(aVal);
+      }
+      
+      const comparison = String(aVal).localeCompare(String(bVal), 'tr');
+      return sortConfig.direction === 'asc' ? comparison : -comparison;
+    });
+
   return (
     <div>
       <div className="page-header">
@@ -114,8 +195,30 @@ export default function VisitorsPage() {
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">Filtreler</h3>
+          <div className="filter-actions">
+            <div className="quick-filters">
+              <button className="filter-chip" onClick={() => setQuickDateFilter('today')}>📅 Bugün</button>
+              <button className="filter-chip" onClick={() => setQuickDateFilter('week')}>📆 Bu Hafta</button>
+              <button className="filter-chip" onClick={() => setQuickDateFilter('month')}>🗓️ Bu Ay</button>
+            </div>
+            {hasActiveFilters && (
+              <button className="btn btn-secondary btn-sm" onClick={clearFilters}>
+                ✕ Filtreleri Temizle
+              </button>
+            )}
+          </div>
         </div>
         <div className="filters">
+          <div className="filter-group search-group">
+            <label>Ara</label>
+            <input
+              type="text"
+              className="form-input search-input"
+              placeholder="İsim, telefon, şirket..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+          </div>
           <div className="filter-group">
             <label>Başlangıç Tarihi</label>
             <input
@@ -192,21 +295,31 @@ export default function VisitorsPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Ziyaretçi</th>
+                  <th className="sortable-header" onClick={() => handleSort('fullName')}>
+                    Ziyaretçi {getSortIcon('fullName')}
+                  </th>
                   <th>Telefon</th>
-                  <th>Geldiği Kurum</th>
+                  <th className="sortable-header" onClick={() => handleSort('company')}>
+                    Geldiği Kurum {getSortIcon('company')}
+                  </th>
                   <th>Görüştüğü Kişi</th>
                   <th>Departman</th>
-                  <th>Giriş</th>
-                  <th>Çıkış</th>
+                  <th className="sortable-header" onClick={() => handleSort('entryTime')}>
+                    Giriş {getSortIcon('entryTime')}
+                  </th>
+                  <th className="sortable-header" onClick={() => handleSort('exitTime')}>
+                    Çıkış {getSortIcon('exitTime')}
+                  </th>
                   <th>Araç</th>
                   <th>Personel</th>
-                  <th>Durum</th>
+                  <th className="sortable-header" onClick={() => handleSort('status')}>
+                    Durum {getSortIcon('status')}
+                  </th>
                   <th>İşlem</th>
                 </tr>
               </thead>
               <tbody>
-                {visitors.map((v) => (
+                {filteredVisitors.map((v) => (
                   <tr key={v._id}>
                     <td><strong>{v.fullName}</strong></td>
                     <td>{v.phone}</td>
@@ -233,7 +346,7 @@ export default function VisitorsPage() {
                     </td>
                   </tr>
                 ))}
-                {visitors.length === 0 && (
+                {filteredVisitors.length === 0 && (
                   <tr>
                     <td colSpan={11} className="text-center">Kayıt bulunamadı</td>
                   </tr>

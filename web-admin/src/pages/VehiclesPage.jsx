@@ -6,6 +6,8 @@ export default function VehiclesPage() {
   const [staffList, setStaffList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [searchText, setSearchText] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: 'entryTime', direction: 'desc' });
   const [filters, setFilters] = useState({
     status: '',
     licensePlate: '',
@@ -106,6 +108,84 @@ export default function VehiclesPage() {
     setSelectedVehicle(null);
   };
 
+  // Quick date filter helpers
+  const setQuickDateFilter = (preset) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let startDate = '';
+    let endDate = new Date().toISOString().split('T')[0];
+
+    if (preset === 'today') {
+      startDate = endDate;
+    } else if (preset === 'week') {
+      const weekAgo = new Date(today);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      startDate = weekAgo.toISOString().split('T')[0];
+    } else if (preset === 'month') {
+      const monthAgo = new Date(today);
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      startDate = monthAgo.toISOString().split('T')[0];
+    }
+
+    setFilters({ ...filters, startDate, endDate });
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      status: '',
+      licensePlate: '',
+      recordedBy: '',
+      startDate: '',
+      endDate: '',
+    });
+    setSearchText('');
+    setPagination({ ...pagination, page: 1 });
+  };
+
+  const hasActiveFilters = filters.status || filters.licensePlate || filters.recordedBy || filters.startDate || filters.endDate || searchText;
+
+  // Sorting
+  const handleSort = (key) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) return '↕️';
+    return sortConfig.direction === 'asc' ? '↑' : '↓';
+  };
+
+  // Filter and sort vehicles
+  const filteredVehicles = vehicles
+    .filter(v => {
+      if (!searchText) return true;
+      const search = searchText.toLowerCase();
+      return (
+        v.driverName?.toLowerCase().includes(search) ||
+        v.licensePlate?.toLowerCase().includes(search) ||
+        v.brand?.toLowerCase().includes(search) ||
+        v.model?.toLowerCase().includes(search)
+      );
+    })
+    .sort((a, b) => {
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+      if (!aVal && !bVal) return 0;
+      if (!aVal) return 1;
+      if (!bVal) return -1;
+      
+      if (sortConfig.key === 'entryTime' || sortConfig.key === 'exitTime') {
+        return sortConfig.direction === 'asc' 
+          ? new Date(aVal) - new Date(bVal)
+          : new Date(bVal) - new Date(aVal);
+      }
+      
+      const comparison = String(aVal).localeCompare(String(bVal), 'tr');
+      return sortConfig.direction === 'asc' ? comparison : -comparison;
+    });
+
   return (
     <div>
       <div className="page-header">
@@ -123,8 +203,30 @@ export default function VehiclesPage() {
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">Filtreler</h3>
+          <div className="filter-actions">
+            <div className="quick-filters">
+              <button className="filter-chip" onClick={() => setQuickDateFilter('today')}>📅 Bugün</button>
+              <button className="filter-chip" onClick={() => setQuickDateFilter('week')}>📆 Bu Hafta</button>
+              <button className="filter-chip" onClick={() => setQuickDateFilter('month')}>🗓️ Bu Ay</button>
+            </div>
+            {hasActiveFilters && (
+              <button className="btn btn-secondary btn-sm" onClick={clearFilters}>
+                ✕ Filtreleri Temizle
+              </button>
+            )}
+          </div>
         </div>
         <div className="filters">
+          <div className="filter-group search-group">
+            <label>Ara</label>
+            <input
+              type="text"
+              className="form-input search-input"
+              placeholder="Sürücü, plaka, marka..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+          </div>
           <div className="filter-group">
             <label>Başlangıç Tarihi</label>
             <input
@@ -141,16 +243,6 @@ export default function VehiclesPage() {
               className="form-input"
               value={filters.endDate}
               onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-            />
-          </div>
-          <div className="filter-group">
-            <label>Plaka Ara</label>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Plaka..."
-              value={filters.licensePlate}
-              onChange={(e) => setFilters({ ...filters, licensePlate: e.target.value.toUpperCase() })}
             />
           </div>
           <div className="filter-group">
@@ -198,19 +290,29 @@ export default function VehiclesPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Sürücü</th>
-                  <th>Plaka</th>
+                  <th className="sortable-header" onClick={() => handleSort('driverName')}>
+                    Sürücü {getSortIcon('driverName')}
+                  </th>
+                  <th className="sortable-header" onClick={() => handleSort('licensePlate')}>
+                    Plaka {getSortIcon('licensePlate')}
+                  </th>
                   <th>Marka</th>
                   <th>Model</th>
-                  <th>Giriş</th>
-                  <th>Çıkış</th>
+                  <th className="sortable-header" onClick={() => handleSort('entryTime')}>
+                    Giriş {getSortIcon('entryTime')}
+                  </th>
+                  <th className="sortable-header" onClick={() => handleSort('exitTime')}>
+                    Çıkış {getSortIcon('exitTime')}
+                  </th>
                   <th>Personel</th>
-                  <th>Durum</th>
+                  <th className="sortable-header" onClick={() => handleSort('status')}>
+                    Durum {getSortIcon('status')}
+                  </th>
                   <th>İşlem</th>
                 </tr>
               </thead>
               <tbody>
-                {vehicles.map((v) => (
+                {filteredVehicles.map((v) => (
                   <tr key={v._id}>
                     <td><strong>{v.driverName}</strong></td>
                     <td className="license-plate">{v.licensePlate}</td>
@@ -235,7 +337,7 @@ export default function VehiclesPage() {
                     </td>
                   </tr>
                 ))}
-                {vehicles.length === 0 && (
+                {filteredVehicles.length === 0 && (
                   <tr>
                     <td colSpan={9} className="text-center">Kayıt bulunamadı</td>
                   </tr>

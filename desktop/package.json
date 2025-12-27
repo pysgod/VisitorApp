@@ -1,0 +1,51 @@
+{
+  "name": "visitor-app-desktop",
+  "version": "1.0.0",
+  "description": "Ziyaretçi Yönetim Sistemi - Yönetici Paneli",
+  "main": "public/electron.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "concurrently \"npm run react-dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "react-dev": "react-scripts start",
+    "build": "react-scripts build",
+    "electron-build": "npm run build; npx electron-builder"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "chart.js": "^4.4.1",
+    "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.21.0",
+    "react-scripts": "5.0.1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "wait-on": "^7.2.0"
+  },
+  "browserslist": {
+    "production": [
+      "last 1 electron version"
+    ],
+    "development": [
+      "last 1 electron version"
+    ]
+  },
+  "build": {
+    "appId": "com.visitorapp.desktop",
+    "productName": "Ziyaretci Yonetim Sistemi",
+    "win": {
+      "target": "nsis"
+    },
+    "files": [
+      "build/**/*",
+      "public/electron.js",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "public"
+    }
+  }
+}
